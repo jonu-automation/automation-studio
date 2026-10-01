@@ -1,6 +1,6 @@
 # Portfolio verification report
 
-Date: 2026-10-01. Target: Windows, Node.js 24, persistent PGlite database, local API and Vite interface.
+Date: 2026-10-01. Targets: Windows local workspace and GitHub Actions on Ubuntu, Node.js 24, persistent PGlite database, local API and Vite interface.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
@@ -14,7 +14,8 @@ Date: 2026-10-01. Target: Windows, Node.js 24, persistent PGlite database, local
 | Production build | Final build passed in user's PowerShell | API bundled; Vite built 3299 modules; sourcemap warning did not fail build |
 | External provider delivery and AI generation | Not verified with real credentials | No paid-provider calls were made |
 | Compiled API runtime | Passed with final build, including all 19 integration checks | scripts/check-compiled.mjs: isolated fresh database, save, transform output 42, full API suite |
-| Public deployment and GitHub CI | Not run | Repository is local and has not been published |
+| GitHub CI on Linux | Passed | [Verified run](https://github.com/jonu-automation/automation-studio/actions/runs/36935264280): frozen install, TypeScript, regression tests, database persistence, build, compiled API and running API suite |
+| Public application deployment | Not verified | Source repository is public; the application runs locally |
 
 ## API coverage
 

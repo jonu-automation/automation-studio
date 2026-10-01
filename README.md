@@ -1,5 +1,7 @@
 # Automation Studio
 
+[![Checks](https://github.com/jonu-automation/automation-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/jonu-automation/automation-studio/actions/workflows/ci.yml)
+
 A software portfolio project demonstrating a visual workflow automation platform built with React, TypeScript, Express, PostgreSQL/Drizzle and React Flow. Includes editable workflows, conditional routing, schedules, webhook triggers, human approvals, execution logs and version history.
 
 Two self-contained examples demonstrate lead qualification and report approval without provider keys or paid services. The local workspace has passed 19 API integration checks, database persistence checks and compiled API verification. See [verification details](docs/VALIDATION.md).
@@ -66,4 +68,4 @@ The editor saves the current canvas before Run and preserves true/false branch h
 
 See [demo walkthrough](docs/PORTFOLIO.md) and [verification report](docs/VALIDATION.md). `pnpm test:local` checks the running API; `pnpm test:db` checks database persistence independently. Provider delivery and external AI generation require separate checks with real credentials.
 
-`pnpm test:compiled` verifies the bundled API with a disposable database after a successful build. The CI workflow also runs these checks and the running-API suite, but has not yet run on GitHub.
+`pnpm test:compiled` verifies the bundled API with a disposable database after a successful build. The [GitHub CI run](https://github.com/jonu-automation/automation-studio/actions/runs/36935264280) passed on Linux, including type checks, regression tests, database persistence, build, compiled API verification and the running-API suite.
