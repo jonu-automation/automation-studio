@@ -1,0 +1,78 @@
+{
+  "name": "Portfolio: Lead qualification",
+  "description": "Self-contained sample lead routing. Change the score in Sample lead to demonstrate the alternate branch. No API keys required.",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "manual",
+      "label": "Start demo",
+      "x": 80,
+      "y": 200,
+      "config": {}
+    },
+    {
+      "id": "lead",
+      "type": "transform",
+      "label": "Sample lead",
+      "x": 300,
+      "y": 200,
+      "config": {
+        "code": "const output = { name: \"Alex\", email: \"alex@example.invalid\", score: 85, source: \"Portfolio demo\" };"
+      }
+    },
+    {
+      "id": "qualify",
+      "type": "if_else",
+      "label": "Score at least 50?",
+      "x": 550,
+      "y": 200,
+      "config": {
+        "condition": "input.score >= 50"
+      }
+    },
+    {
+      "id": "qualified",
+      "type": "transform",
+      "label": "Qualified lead",
+      "x": 810,
+      "y": 100,
+      "config": {
+        "code": "const output = { lead: input.data.name, score: input.data.score, route: \"qualified\", nextAction: \"Schedule a discovery call\" };"
+      }
+    },
+    {
+      "id": "nurture",
+      "type": "transform",
+      "label": "Nurture lead",
+      "x": 810,
+      "y": 320,
+      "config": {
+        "code": "const output = { lead: input.data.name, score: input.data.score, route: \"nurture\", nextAction: \"Follow up later\" };"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "start-lead",
+      "source": "start",
+      "target": "lead"
+    },
+    {
+      "id": "lead-qualify",
+      "source": "lead",
+      "target": "qualify"
+    },
+    {
+      "id": "qualify-qualified",
+      "source": "qualify",
+      "target": "qualified",
+      "sourceHandle": "true"
+    },
+    {
+      "id": "qualify-nurture",
+      "source": "qualify",
+      "target": "nurture",
+      "sourceHandle": "false"
+    }
+  ]
+}

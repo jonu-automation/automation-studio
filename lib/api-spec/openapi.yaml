@@ -1,0 +1,934 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Automation Studio API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication & user account
+  - name: workflows
+    description: Workflow management
+  - name: nodes
+    description: Node definitions
+  - name: executions
+    description: Workflow executions
+  - name: stats
+    description: Dashboard statistics
+  - name: credentials
+    description: Stored credentials management
+
+paths:
+  /billing/checkout:
+    post:
+      operationId: createCheckoutSession
+      tags: [auth]
+      summary: Create a LemonSqueezy checkout session to upgrade plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                planKey:
+                  type: string
+                  enum: [hobby, pro, team]
+              required: [planKey]
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                required: [url]
+        "401":
+          description: Unauthorized
+
+  /billing/portal:
+    post:
+      operationId: createPortalSession
+      tags: [auth]
+      summary: Get LemonSqueezy customer portal URL
+      responses:
+        "200":
+          description: Portal session URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                required: [url]
+        "401":
+          description: Unauthorized
+
+  /billing/usage:
+    get:
+      operationId: getBillingUsage
+      tags: [auth]
+      summary: Get current compute-time usage for the billing period
+      responses:
+        "200":
+          description: Usage stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingUsage"
+        "401":
+          description: Unauthorized
+
+  /billing/products:
+    get:
+      operationId: listBillingProducts
+      tags: [auth]
+      summary: List Stripe products with prices
+      responses:
+        "200":
+          description: Products list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BillingProduct"
+                required: [data]
+        "401":
+          description: Unauthorized
+
+  /auth/me:
+    get:
+      operationId: getAuthMe
+      tags: [auth]
+      summary: Get current authenticated user profile and plan info
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /workflows:
+    get:
+      operationId: listWorkflows
+      tags: [workflows]
+      summary: List all workflows
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, all]
+      responses:
+        "200":
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+    post:
+      operationId: createWorkflow
+      tags: [workflows]
+      summary: Create a new workflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkflowBody"
+      responses:
+        "201":
+          description: Created workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+
+  /workflows/{id}:
+    get:
+      operationId: getWorkflow
+      tags: [workflows]
+      summary: Get a workflow by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateWorkflow
+      tags: [workflows]
+      summary: Update a workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkflowBody"
+      responses:
+        "200":
+          description: Updated workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+    delete:
+      operationId: deleteWorkflow
+      tags: [workflows]
+      summary: Delete a workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workflows/{id}/execute:
+    post:
+      operationId: executeWorkflow
+      tags: [workflows]
+      summary: Execute a workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inputData:
+                  type: object
+      responses:
+        "200":
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+
+  /workflows/{id}/toggle:
+    post:
+      operationId: toggleWorkflow
+      tags: [workflows]
+      summary: Toggle workflow active/inactive
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+
+  /executions:
+    get:
+      operationId: listExecutions
+      tags: [executions]
+      summary: List workflow executions
+      parameters:
+        - name: workflowId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [success, error, running, all]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of executions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Execution"
+
+  /executions/{id}:
+    get:
+      operationId: getExecution
+      tags: [executions]
+      summary: Get execution details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Execution detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+
+  /executions/{id}/retry:
+    post:
+      operationId: retryExecution
+      tags: [executions]
+      summary: Retry a failed execution with its original input data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: New execution created for the retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "404":
+          description: Execution not found
+        "400":
+          description: Execution is not in a retryable state
+
+  /node-types:
+    get:
+      operationId: listNodeTypes
+      tags: [nodes]
+      summary: List available node types
+      responses:
+        "200":
+          description: List of node types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NodeType"
+
+  /credentials:
+    get:
+      operationId: listCredentials
+      tags: [credentials]
+      summary: List stored credentials for the current user
+      responses:
+        "200":
+          description: List of credentials (data field is redacted)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Credential"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createCredential
+      tags: [credentials]
+      summary: Store a new credential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCredentialBody"
+      responses:
+        "201":
+          description: Created credential
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Credential"
+        "401":
+          description: Unauthorized
+
+  /credentials/{id}:
+    delete:
+      operationId: deleteCredential
+      tags: [credentials]
+      summary: Delete a stored credential
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+  /webhooks/{token}:
+    post:
+      operationId: triggerWebhook
+      tags: [workflows]
+      summary: Trigger a workflow via its unique webhook URL (public, no auth)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "404":
+          description: Webhook not found
+
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/execution-history:
+    get:
+      operationId: getExecutionHistory
+      tags: [stats]
+      summary: Get execution counts per day for the last 30 days
+      responses:
+        "200":
+          description: Execution history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExecutionHistoryPoint"
+
+  /approvals:
+    get:
+      operationId: listApprovals
+      tags: [approvals]
+      summary: List approval requests for the current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Approval requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApprovalRequest"
+
+  /approvals/{id}/respond:
+    post:
+      operationId: respondToApproval
+      tags: [approvals]
+      summary: Approve or reject a pending approval request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalResponse"
+      responses:
+        "200":
+          description: Response recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  decision:
+                    type: string
+                required: [success, decision]
+        "404":
+          description: Not found
+        "409":
+          description: Already responded
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: [error, message]
+
+    WorkflowNode:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        label:
+          type: string
+        x:
+          type: number
+        y:
+          type: number
+        config:
+          type: object
+      required: [id, type, label, x, y]
+
+    WorkflowEdge:
+      type: object
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        sourceHandle:
+          type: string
+        targetHandle:
+          type: string
+      required: [id, source, target]
+
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        active:
+          type: boolean
+        webhookToken:
+          type: string
+          nullable: true
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowEdge"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastRunAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastRunStatus:
+          type: string
+          nullable: true
+        totalRuns:
+          type: integer
+        successRuns:
+          type: integer
+        errorRuns:
+          type: integer
+      required: [id, name, active, nodes, edges, createdAt, updatedAt, totalRuns, successRuns, errorRuns]
+
+    CreateWorkflowBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowEdge"
+      required: [name]
+
+    UpdateWorkflowBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        active:
+          type: boolean
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowEdge"
+
+    Execution:
+      type: object
+      properties:
+        id:
+          type: integer
+        workflowId:
+          type: integer
+        workflowName:
+          type: string
+        status:
+          type: string
+          enum: [success, error, running]
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationMs:
+          type: integer
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        nodeResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/NodeResult"
+        inputData:
+          type: object
+        outputData:
+          type: object
+          nullable: true
+      required: [id, workflowId, workflowName, status, startedAt, nodeResults, inputData]
+
+    NodeResult:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        nodeType:
+          type: string
+        status:
+          type: string
+          enum: [success, error, skipped]
+        output:
+          type: object
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        durationMs:
+          type: integer
+      required: [nodeId, nodeType, status, durationMs]
+
+    NodeType:
+      type: object
+      properties:
+        type:
+          type: string
+        label:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        color:
+          type: string
+        icon:
+          type: string
+        configSchema:
+          type: object
+      required: [type, label, category, description, color, icon]
+
+    DashboardStats:
+      type: object
+      properties:
+        totalWorkflows:
+          type: integer
+        activeWorkflows:
+          type: integer
+        totalExecutions:
+          type: integer
+        successfulExecutions:
+          type: integer
+        failedExecutions:
+          type: integer
+        avgDurationMs:
+          type: integer
+        executionsToday:
+          type: integer
+        successRate:
+          type: number
+      required: [totalWorkflows, activeWorkflows, totalExecutions, successfulExecutions, failedExecutions, avgDurationMs, executionsToday, successRate]
+
+    ExecutionHistoryPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        success:
+          type: integer
+        error:
+          type: integer
+      required: [date, success, error]
+
+    BillingProduct:
+      type: object
+      properties:
+        product_id:
+          type: string
+        product_name:
+          type: string
+        product_description:
+          type: string
+          nullable: true
+        price_id:
+          type: string
+        unit_amount:
+          type: integer
+        currency:
+          type: string
+        recurring:
+          type: object
+          nullable: true
+      required: [product_id, product_name, price_id, unit_amount, currency]
+
+    BillingUsage:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [free, hobby, pro, team]
+        planLabel:
+          type: string
+        computeSecondsUsed:
+          type: integer
+        computeSecondsLimit:
+          type: integer
+          nullable: true
+          description: "null means unlimited"
+        computeMsUsed:
+          type: integer
+        percentUsed:
+          type: integer
+        runsThisMonth:
+          type: integer
+        resetAt:
+          type: string
+          format: date-time
+          nullable: true
+        price:
+          type: integer
+      required: [plan, planLabel, computeSecondsUsed, computeMsUsed, percentUsed, runsThisMonth, price]
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          nullable: true
+        plan:
+          type: string
+          enum: [free, hobby, pro, team]
+        planLabel:
+          type: string
+        runsThisMonth:
+          type: integer
+        maxRunsPerMonth:
+          type: integer
+          description: "-1 means unlimited"
+        maxWorkflows:
+          type: integer
+          description: "-1 means unlimited"
+        stripeCustomerId:
+          type: string
+          nullable: true
+        stripeSubscriptionId:
+          type: string
+          nullable: true
+      required: [id, plan, planLabel, runsThisMonth, maxRunsPerMonth, maxWorkflows]
+
+    Credential:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        credentialType:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, credentialType, createdAt]
+
+    CreateCredentialBody:
+      type: object
+      properties:
+        name:
+          type: string
+        credentialType:
+          type: string
+        data:
+          type: object
+          description: Credential data e.g. apiKey for Resend, url for Slack webhook
+      required: [name, credentialType, data]
+
+    ApprovalRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        executionId:
+          type: integer
+        nodeId:
+          type: string
+        workflowId:
+          type: integer
+        userId:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        approverEmails:
+          type: array
+          items:
+            type: string
+        deadlineAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected, expired]
+        decision:
+          type: string
+          nullable: true
+        deciderEmail:
+          type: string
+          nullable: true
+        responseNote:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        respondedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, executionId, nodeId, workflowId, userId, title, message, approverEmails, status, createdAt]
+
+    ApprovalResponse:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected]
+        responseNote:
+          type: string
+        deciderEmail:
+          type: string
+      required: [decision]

@@ -1,0 +1,30 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "node scripts/check-package-manager.mjs",
+    "build": "node scripts/workspace-check.mjs --build",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "node scripts/workspace-check.mjs",
+    "local": "node scripts/local.mjs",
+    "db:generate": "node scripts/generate-db.mjs",
+    "test": "node --test --test-isolation=none tests/*.test.ts",
+    "demo:seed": "node scripts/seed-demo.mjs",
+    "test:local": "node scripts/smoke-local.mjs",
+    "test:db": "node scripts/check-db.mjs",
+    "test:compiled": "node scripts/check-compiled.mjs"
+  },
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2",
+    "tsx": "catalog:",
+    "@types/node": "catalog:"
+  },
+  "dependencies": {
+    "stripe": "^22.0.1",
+    "stripe-replit-sync": "^1.0.0"
+  },
+  "packageManager": "pnpm@10.30.3"
+}

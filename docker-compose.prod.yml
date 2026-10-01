@@ -1,0 +1,102 @@
+# Production compose with automatic SSL via Let's Encrypt
+#
+# Usage:
+#   DOMAIN=yourdomain.com LETSENCRYPT_EMAIL=you@email.com docker-compose -f docker-compose.prod.yml up -d
+#
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-automation}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-automation_studio}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-automation}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    restart: always
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-automation}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-automation_studio}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      SESSION_SECRET: ${SESSION_SECRET}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      VIRTUAL_HOST: ${DOMAIN}
+      LETSENCRYPT_HOST: ${DOMAIN}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # nginx-proxy handles routing + passes to Let's Encrypt companion
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certs:/etc/nginx/certs:ro
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./docker/nginx/nginx.prod.conf:/etc/nginx/conf.d/custom.conf:ro
+
+  # Automatically obtains + renews Let's Encrypt certs
+  acme-companion:
+    image: nginxproxy/acme-companion
+    restart: always
+    environment:
+      DEFAULT_EMAIL: ${LETSENCRYPT_EMAIL}
+    volumes:
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - nginx-proxy
+
+  # Frontend static files — served via nginx-proxy routing
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    restart: always
+    environment:
+      VIRTUAL_HOST: ${DOMAIN}
+      LETSENCRYPT_HOST: ${DOMAIN}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    depends_on:
+      - nginx-proxy
+
+volumes:
+  postgres_data:
+  redis_data:
+  certs:
+  vhost:
+  html:
+  acme:

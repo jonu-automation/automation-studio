@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Automation Studio"
+version = "1.0.0"
+id = "artifacts/n8n-automation"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20402
+
+[services.development]
+run = "pnpm --filter @workspace/n8n-automation run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/n8n-automation", "run", "build" ]
+publicDir = "artifacts/n8n-automation/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20402"
+BASE_PATH = "/"

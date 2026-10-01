@@ -1,0 +1,22 @@
+node_modules
+**/node_modules
+**/.git
+**/.env
+**/*.log
+**/dist
+!artifacts/api-server/dist
+!artifacts/n8n-automation/dist
+
+# Replit-specific
+.replit
+replit.nix
+.local
+attached_assets
+screenshots
+
+# Dev only
+**/.turbo
+**/.next
+**/.nuxt
+**/coverage
+**/.nyc_output

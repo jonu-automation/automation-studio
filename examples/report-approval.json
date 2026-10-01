@@ -1,0 +1,63 @@
+{
+  "name": "Portfolio: Report approval",
+  "description": "Create a sample report, approve or reject it from the inbox and inspect the execution history. No emails are sent.",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "manual",
+      "label": "Start report",
+      "x": 80,
+      "y": 200,
+      "config": {}
+    },
+    {
+      "id": "draft",
+      "type": "transform",
+      "label": "Prepare report",
+      "x": 300,
+      "y": 200,
+      "config": {
+        "code": "const output = { title: \"Weekly activity\", leads: 12, qualified: 4, sample: true };"
+      }
+    },
+    {
+      "id": "review",
+      "type": "approval",
+      "label": "Review report",
+      "x": 540,
+      "y": 200,
+      "config": {
+        "title": "Review the sample weekly report",
+        "message": "Portfolio demonstration. Approve to continue or reject to stop.",
+        "approvalMode": "any"
+      }
+    },
+    {
+      "id": "done",
+      "type": "transform",
+      "label": "Record approval",
+      "x": 800,
+      "y": 200,
+      "config": {
+        "code": "const output = { status: \"reviewed\", approved: input.approved, report: input.$nodes.draft, sample: true };"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "start-draft",
+      "source": "start",
+      "target": "draft"
+    },
+    {
+      "id": "draft-review",
+      "source": "draft",
+      "target": "review"
+    },
+    {
+      "id": "review-done",
+      "source": "review",
+      "target": "done"
+    }
+  ]
+}
