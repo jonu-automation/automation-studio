@@ -35,13 +35,13 @@ function ContactSalesBanner({ plan }: { plan: string }) {
           ))}
         </div>
 
-        <a
-          href="mailto:sales@automationstudio.dev?subject=Self-Hosting%20Inquiry"
+        <Link
+          href="/pricing"
           className="inline-flex items-center gap-2 bg-foreground hover:bg-foreground/90 text-background font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
         >
-          Contact Sales
+          View project scope
           <ExternalLink className="w-3.5 h-3.5" />
-        </a>
+        </Link>
 
         <p className="text-[10px] text-muted-foreground mt-3">
           Or{" "}

@@ -4,4 +4,4 @@ Rulează pașii din README.md. Adresa interfeței este http://127.0.0.1:3000. Da
 
 Originalul de pe Desktop a rămas nemodificat. Această copie include corecții pentru ramuri, selectarea cheilor, rezultatele integrărilor și compatibilitatea Windows.
 
-Publicarea online și încărcarea pe GitHub urmează după verificarea efectivă a aplicației.
+Codul este publicat la https://github.com/jonu-automation/automation-studio. Aplicația rulează local; găzduirea publică necesită configurare și verificări separate.

@@ -46,4 +46,4 @@ The command adds the two example workflows only when their names are absent. JSO
 
 Real email, Slack, Sheets, Notion, Airtable, Discord and OpenAI calls require provider keys and end-to-end provider tests. Complete SSO sign-in, database query execution and production Docker hosting are unfinished. Claude/Cursor interoperability and public multi-user operation are not certified by the local demonstration. No exclusivity, feature parity or price superiority over n8n or Zapier is claimed.
 
-The workspace is currently local; publishing the GitHub repository and a public demonstration remains a separate step.
+The source repository is public at https://github.com/jonu-automation/automation-studio. The application runs locally; a public application deployment remains a separate step.
